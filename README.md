@@ -1,5 +1,20 @@
 <p align="center">
-  <h1 align="center">Claude Code Game Studios</h1>
+  <h1 align="center">Spellrot</h1>
+  <p align="center">
+    Wizard vs zombie horde arena brawler — UE5.7 · PC/Steam
+    <br />
+    Built with <a href="https://github.com/Donchitos/Claude-Code-Game-Studios">Claude Code Game Studios</a>
+  </p>
+</p>
+
+> **Unreal Engine project:** [`ibrews/spellrot-ue`](https://github.com/ibrews/spellrot-ue) — the actual UE5.7 prototype (`/Users/alex/ue/ThirdPersonClass/`)
+>
+> **Game concept:** [`design/gdd/game-concept.md`](design/gdd/game-concept.md) — full design doc including pillars, core loop, and scope tiers
+
+---
+
+<p align="center">
+  <h2 align="center">Claude Code Game Studios</h2>
   <p align="center">
     Turn a single Claude Code session into a full game development studio.
     <br />
