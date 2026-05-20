@@ -4,9 +4,9 @@
 |-------|-------|
 | **Engine Version** | Unreal Engine 5.7 |
 | **Release Date** | November 2025 |
-| **Project Pinned** | 2026-02-13 |
-| **Last Docs Verified** | 2026-02-13 |
-| **LLM Knowledge Cutoff** | May 2025 |
+| **Project Pinned** | 2026-05-20 |
+| **Last Docs Verified** | 2026-05-20 |
+| **LLM Knowledge Cutoff** | August 2025 |
 
 ## Knowledge Gap Warning
 
@@ -43,6 +43,14 @@ Always cross-reference this directory before suggesting Unreal API calls.
 ### Deprecated Systems
 - **Legacy Material System**: Migrate to Substrate for new projects
 - **Old PCG API**: Use new production-ready PCG API (5.7+)
+
+## Critical Flags for Spellrot (added 2026-05-20)
+
+- **GAS spells — must use `InstancedPerActor`**: `NonInstanced` policy was removed in 5.5. Any `UGameplayAbility` subclass must set `InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor` in its constructor.
+- **Spell/corruption materials — Substrate is default in 5.7**: New material node graph. Color-shift corruption materials must be authored with Substrate Slab nodes, not legacy shading model nodes.
+- **Niagara particles — re-save on first open**: All Niagara assets from pre-5.7 templates auto-convert on first open. `create_niagara_system` via ECABridge MCP is currently broken (zero emission) — use `duplicate_asset` as workaround.
+- **Lighting — HWRT only**: SWRT deprecated in 5.6. Use `r.Lumen.HardwareRayTracing=1`. Do not mix Nanite geometry with pre-computed lightmaps.
+- **Enhanced Input is mandatory**: `InputComponent->BindAction()` / `BindAxis()` are deprecated. All input must go through `UInputAction` + `UInputMappingContext` + `UEnhancedInputComponent`.
 
 ## Verified Sources
 

@@ -5,44 +5,45 @@
 
 ## Engine & Language
 
-- **Engine**: [TO BE CONFIGURED — run /setup-engine]
-- **Language**: [TO BE CONFIGURED]
-- **Rendering**: [TO BE CONFIGURED]
-- **Physics**: [TO BE CONFIGURED]
+- **Engine**: Unreal Engine 5.7
+- **Language**: C++ (primary), Blueprint (gameplay prototyping)
+- **Rendering**: Lumen (global illumination), Nanite (virtualized geometry)
+- **Physics**: Chaos Physics (default in UE5)
 
 ## Input & Platform
 
 <!-- Written by /setup-engine. Read by /ux-design, /ux-review, /test-setup, /team-ui, and /dev-story -->
 <!-- to scope interaction specs, test helpers, and implementation to the correct input methods. -->
 
-- **Target Platforms**: [TO BE CONFIGURED — e.g., PC, Console, Mobile, Web]
-- **Input Methods**: [TO BE CONFIGURED — e.g., Keyboard/Mouse, Gamepad, Touch, Mixed]
-- **Primary Input**: [TO BE CONFIGURED — the dominant input for this game]
-- **Gamepad Support**: [TO BE CONFIGURED — Full / Partial / None]
-- **Touch Support**: [TO BE CONFIGURED — Full / Partial / None]
-- **Platform Notes**: [TO BE CONFIGURED — any platform-specific UX constraints]
+- **Target Platforms**: PC (Steam / Epic)
+- **Input Methods**: Keyboard/Mouse, Gamepad
+- **Primary Input**: Keyboard/Mouse (mouse-aimed spells, precision advantage on PC)
+- **Gamepad Support**: Partial (recommended — test but not required for prototype)
+- **Touch Support**: None
+- **Platform Notes**: No hover-only UI interactions. Gamepad support should not block prototype shipping but must be validated before vertical slice. All menus must be navigable without a mouse.
 
 ## Naming Conventions
 
-- **Classes**: [TO BE CONFIGURED]
-- **Variables**: [TO BE CONFIGURED]
-- **Signals/Events**: [TO BE CONFIGURED]
-- **Files**: [TO BE CONFIGURED]
-- **Scenes/Prefabs**: [TO BE CONFIGURED]
-- **Constants**: [TO BE CONFIGURED]
+- **Classes**: Prefixed PascalCase — `A` (Actor), `U` (UObject), `F` (struct), `I` (interface), `E` (enum). e.g. `APlayerWizard`, `UCorruptionComponent`, `FSpellData`
+- **Variables**: PascalCase — `MoveSpeed`, `MaxCorruption`, `CurrentWave`
+- **Booleans**: `b` prefix — `bIsInfected`, `bIsAlive`, `bCanCast`
+- **Functions**: PascalCase — `TakeDamage()`, `GetCorruptionLevel()`, `PurgeCorruption()`
+- **Files**: Match class name without prefix — `PlayerWizard.h`, `WaveSpawner.cpp`
+- **Scenes/Levels**: PascalCase — `Arena_Main.umap`, `BP_ZombieSpawner.uasset`
+- **Constants**: PascalCase (`static constexpr`) or `UPPER_SNAKE_CASE` for macros
 
 ## Performance Budgets
 
-- **Target Framerate**: [TO BE CONFIGURED]
-- **Frame Budget**: [TO BE CONFIGURED]
-- **Draw Calls**: [TO BE CONFIGURED]
-- **Memory Ceiling**: [TO BE CONFIGURED]
+- **Target Framerate**: 60 fps
+- **Frame Budget**: 16.6 ms
+- **Draw Calls**: ≤ 1,000 (typical UE5 PC arena target)
+- **Memory Ceiling**: To be established after prototype profiling
 
 ## Testing
 
-- **Framework**: [TO BE CONFIGURED]
-- **Minimum Coverage**: [TO BE CONFIGURED]
-- **Required Tests**: Balance formulas, gameplay systems, networking (if applicable)
+- **Framework**: Unreal Automation Framework (`FAutomationTestBase`) for unit/integration; Gauntlet for larger system tests
+- **Minimum Coverage**: Infection state machine, wave escalation logic, purge calculations
+- **Required Tests**: Corruption state transitions, spell damage formulas, wave spawner counts, cleanse zone overlap logic
 
 ## Forbidden Patterns
 
@@ -51,8 +52,8 @@
 
 ## Allowed Libraries / Addons
 
-<!-- Add approved third-party dependencies here -->
-- [None configured yet — add as dependencies are approved]
+<!-- Add approved third-party dependencies here — only add when actively integrating, never speculatively -->
+- ECABridge (MCP plugin for AI-assisted development — `Plugins/ECABridge/`) — prototype tooling
 
 ## Architecture Decisions Log
 
@@ -65,12 +66,12 @@
 <!-- Read by /code-review, /architecture-decision, /architecture-review, and team skills -->
 <!-- to know which specialist to spawn for engine-specific validation. -->
 
-- **Primary**: [TO BE CONFIGURED — run /setup-engine]
-- **Language/Code Specialist**: [TO BE CONFIGURED]
-- **Shader Specialist**: [TO BE CONFIGURED]
-- **UI Specialist**: [TO BE CONFIGURED]
-- **Additional Specialists**: [TO BE CONFIGURED]
-- **Routing Notes**: [TO BE CONFIGURED]
+- **Primary**: unreal-specialist
+- **Language/Code Specialist**: ue-blueprint-specialist (Blueprint graphs, BP/C++ boundary design)
+- **Shader Specialist**: unreal-specialist (no dedicated shader specialist — primary covers materials)
+- **UI Specialist**: ue-umg-specialist (UMG widgets, CommonUI, input routing, widget styling)
+- **Additional Specialists**: ue-gas-specialist (Gameplay Ability System — spells, effects, attributes), ue-replication-specialist (if multiplayer added later — property replication, RPCs)
+- **Routing Notes**: Invoke primary for C++ architecture and broad engine decisions. Invoke Blueprint specialist for Blueprint graph architecture and BP/C++ boundary design. Invoke GAS specialist for all spell and ability code. Invoke UMG specialist for all UI implementation. Invoke replication specialist only if multiplayer systems are added.
 
 ### File Extension Routing
 
@@ -79,9 +80,10 @@
 
 | File Extension / Type | Specialist to Spawn |
 |-----------------------|---------------------|
-| Game code (primary language) | [TO BE CONFIGURED] |
-| Shader / material files | [TO BE CONFIGURED] |
-| UI / screen files | [TO BE CONFIGURED] |
-| Scene / prefab / level files | [TO BE CONFIGURED] |
-| Native extension / plugin files | [TO BE CONFIGURED] |
-| General architecture review | Primary |
+| Game code (.cpp, .h files) | unreal-specialist |
+| Shader / material files (.usf, .ush, Material assets) | unreal-specialist |
+| UI / screen files (.umg, UMG Widget Blueprints) | ue-umg-specialist |
+| Scene / prefab / level files (.umap, .uasset) | unreal-specialist |
+| Native extension / plugin files (.uplugin, plugin modules) | unreal-specialist |
+| Blueprint graphs (.uasset BP classes) | ue-blueprint-specialist |
+| General architecture review | unreal-specialist |

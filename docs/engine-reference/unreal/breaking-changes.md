@@ -7,6 +7,23 @@ This document tracks breaking API changes and behavioral differences between Unr
 
 ## HIGH RISK — Will Break Existing Code
 
+### GAS NonInstanced Policy Removed (5.5)
+**Versions:** Removed in UE 5.5 — no longer compiles
+
+`EGameplayAbilityInstancingPolicy::NonInstanced` has been fully removed. Any ability using this policy will fail to compile.
+
+```cpp
+// ❌ REMOVED — will not compile in 5.5+
+InstancingPolicy = EGameplayAbilityInstancingPolicy::NonInstanced;
+
+// ✅ Use InstancedPerActor (recommended) or InstancedPerExecution
+InstancingPolicy = EGameplayAbilityInstancingPolicy::InstancedPerActor;
+```
+
+**Spellrot impact:** All spell `UGameplayAbility` subclasses (Fireball, Force Push, Lightning, corrupted variants) must use `InstancedPerActor`.
+
+---
+
 ### Substrate Material System (Production-Ready in 5.7)
 **Versions:** UE 5.5+ (experimental), 5.7 (production-ready)
 

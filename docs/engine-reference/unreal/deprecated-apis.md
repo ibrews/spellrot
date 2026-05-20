@@ -47,6 +47,12 @@ Format: **Don't use X** → **Use Y instead**
 
 ---
 
+## Gameplay Ability System
+
+| Deprecated | Replacement | Notes |
+|------------|-------------|-------|
+| `EGameplayAbilityInstancingPolicy::NonInstanced` | `InstancedPerActor` | **REMOVED in 5.5** — compile error |
+
 ## Gameplay
 
 | Deprecated | Replacement | Notes |
