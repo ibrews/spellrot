@@ -1,112 +1,92 @@
-# Spellrot session — 2026-05-20 late-evening (HANDOFF — PIE READY)
+# Spellrot — Overnight Session (2026-05-21) — MORNING TEST NEEDED
 
-## TL;DR for next-session Claude
+## Critical morning test (do this FIRST)
 
-UE 5.7 running. ECABridge HTTP up at `127.0.0.1:3000`, 566 commands.
-ALL features complete. Both BPs compile 0 errors / 0 warnings.
-PIE test READY for all 7 behaviors including fireball (Left Mouse Button).
-**Next step: hit Play and run through the checklist below.**
+**Hit Play. Let ONE enemy walk into you. You should:**
+1. Immediately fall over (ragdoll) on first hit
+2. 3 seconds later → level restarts (second "BP_PC BeginPlay OK" in log)
 
-## ECABridge fix committed
+**What this tells us:**
+- ✅ Ragdoll + restart works → death chain is fine, issue was in the corruption math
+  → Next: re-add proper accumulation logic via lisp_to_blueprint
+- ❌ Still invincible → the OpenLevel/Delay chain itself is broken
+  → Deeper engine issue, need different restart mechanism
 
-Branch: `feature/enhanced-input-action-node` (pushed to GitHub)
-PR: https://github.com/ibrews/ECABridge/pull/new/feature/enhanced-input-action-node
+## What was done overnight
 
-`add_blueprint_input_action_node` now emits `K2Node_EnhancedInputAction`
-when a matching `UInputAction` asset exists in the registry; falls back to
-legacy `K2Node_InputAction` for projects not using Enhanced Input.
+### BP_PlatformingCharacter (SAVED)
+- **Death**: AnyDamage → direct SetSimulatePhysics → Delay(3s) → OpenLevel
+  (bypasses ALL corruption math — diagnostic to isolate root cause)
+- **Trail activation**: BeginPlay now calls `Activate()` on Trail_L + Trail_R
+  so Niagara emits continuously — color visible without jumping
+- **Trail color**: `SetColorParameter("User.Color", ...)` — correct Niagara namespace
+- **Clean graph**: all patched arithmetic/print nodes removed
 
-Changes: `ECABridge.Build.cs` (+InputBlueprintNodes dep) + `ECABlueprintNodeCommands.cpp`
-(new `CreateInputActionNode()` helper used by both standalone command and batch_edit).
+### BP_KOTHZone (SAVED — cleanse zone)
+- BeginOverlap cast: `BP_ThirdPersonCharacter → BP_PlatformingCharacter` ✅
+- EndOverlap cast: same fix ✅
+- Zone now activates when the correct player enters
+- CorruptionLevel reset: not yet implemented (SetFloatPropertyByName not in Kismet)
 
-## What was done this session
+### ECABridge (feature branch pushed)
+- `add_blueprint_input_action_node` now emits `K2Node_EnhancedInputAction`
+  when a UInputAction asset is found — fixes IA_Fire fireball binding
 
-1. **ECABridge PR #7** — already merged (nothing to do)
-2. **IA_Fire asset created** at `/Game/Input/Actions/IA_Fire` (Digital, with Pressed/Released triggers)
-   - Also exists at `/Game/Variant_Platforming/Input/Actions/IA_Fire` (has a ref, keep for now)
-3. **IMC_Platforming** — IA_Fire → LeftMouseButton mapping added (at standard path)
-   - Note: IMC has TWO LMB→IA_Fire mappings now (standard + variant path) — harmless duplicate
-4. **Fireball chain wired**: K2Node_InputAction(Pressed) → LineTrace → Branch → Cast → ApplyDamage(25)
-   - ⚠️ The event node is legacy `K2Node_InputAction`, NOT `K2Node_EnhancedInputAction`
-   - Fireball **will NOT fire at PIE** until manual fix below
+## After the morning test
 
-## PIE test checklist (ALL 7 items ready)
+### If death works (most likely path):
+1. Use `lisp_to_blueprint` to rebuild proper corruption accumulation:
+```
+(event AnyDamage
+  (set CorruptionLevel (+ (get CorruptionLevel) 0.25))
+  (branch (>= (get CorruptionLevel) 1.0)
+    :true (seq
+      (call (component Mesh) SetSimulatePhysics true)
+      (delay 2.0)
+      (OpenLevel self "/Game/ThirdPerson/Lvl_ThirdPerson"))
+    :false nil))
+```
+2. Compile + save
+3. Restore BP_Enemy purge logic (it already exists — just verify it works)
+4. Run PIE full-loop test: corruption trail + death + cleanse + fireball
 
-Hit Play in editor and verify:
-- [ ] Corruption +0.25 per enemy touch (BP_Enemy DamageSphere → ApplyDamage on player)
-- [ ] Kill enemy → AnyDamage handler → SetCorruptionLevel -= amount → ragdoll
-- [ ] CorruptionLevel ≥ 1.0 → Death + RestartLevel
-- [ ] Cleanse zone (BP_KOTHZone?) resets CorruptionLevel to 0
-- [ ] Trail color lerps cyan→green as CorruptionLevel increases (Event Tick path)
-- [ ] 3 wave spawners (BP_WaveSpawner) producing enemies every ~3s
-- [ ] Left Mouse Button → Fireball line trace 2000u → ApplyDamage(25) on BP_Enemy
+### If still invincible (fallback):
+- Try `ExecuteConsoleCommand "RestartLevel"` instead of OpenLevel
+- Try checking if BP_PlatformingCharacter actually receives the event
+  (the ragdoll Mesh component may not be set up on this variant)
 
-## Current BP compile status
+## Remaining TODOs
+- [ ] PIE full-loop verification (corruption system end-to-end)
+- [ ] Test cleanse zone CorruptionLevel reset (currently missing the reset logic)
+- [ ] Fireball test (LMB → LineTrace → enemy ragdoll + corruption purge)
+- [ ] Doc screenshots of working gameplay
 
-| Blueprint | Status | Notes |
-|---|---|---|
-| BP_Enemy | ✅ Clean (0/0) | Cast fix intact |
-| BP_PlatformingCharacter | ✅ Clean (0/0) | K2Node_EnhancedInputAction for IA_Fire, Started→LineTrace wired |
-
-## Asset status
-
-| Asset | Path | Status |
-|---|---|---|
-| IA_Fire (standard) | `/Game/Input/Actions/IA_Fire` | ✅ Created, Digital, triggers set |
-| IA_Fire (variant) | `/Game/Variant_Platforming/Input/Actions/IA_Fire` | ⚠️ Keep (has ref, 1 IMC ref) |
-| IMC_Platforming | `/Game/Variant_Platforming/Input/IMC_Platforming` | ✅ 16 mappings, LMB→IA_Fire added |
+## Environment
+- UE 5.7 running
+- ECABridge: 566 commands at 127.0.0.1:3000
 
 ## Session-start checklist
-
 ```bash
-# 1. Verify UE editor still running
-pgrep -fl "UnrealEditor\.app"
-
-# 2. Verify ECABridge HTTP up
-curl -s http://127.0.0.1:3000/health
-
-# 3. If UE is NOT running, launch via UE 5.7 (NOT via Finder):
-open -a "/Users/Shared/Epic Games/UE_5.7/Engine/Binaries/Mac/UnrealEditor.app" \
-  --args /Users/alex/ue/ThirdPersonClass/ThirdPersonClass.uproject
+pgrep -fl "UnrealEditor" | head -1
+curl -s http://127.0.0.1:3000/health | python3 -c "import sys,json; d=json.load(sys.stdin); print(f'ECA: {d[\"commands\"]} cmds, ready={d[\"bridge_ready\"]}')"
 ```
-
-## ECABridge MCP gotcha after restart
-
-After a computer restart, the MCP tools (`mcp__unreal-ecabridge__*`) are dropped
-from the Claude Code session because the server wasn't running at startup.
-**Workaround**: call ECABridge directly via HTTP JSON-RPC:
-```python
-import json, urllib.request
-def eca(tool, args=None, timeout=60):
-    payload = json.dumps({"jsonrpc":"2.0","id":1,"method":"tools/call",
-        "params":{"name":tool,"arguments":args or {}}}).encode()
-    req = urllib.request.Request("http://127.0.0.1:3000/mcp", data=payload,
-        headers={"Content-Type":"application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        resp = json.loads(r.read())
-    content = resp.get("result",{}).get("content",[])
-    return json.loads(content[0]["text"]) if content else {}
-```
-After server is up, restart the Claude Code session to get MCP tools back.
 
 ## Do NOT rules
-
 - ❌ Do NOT use execute_python with set_editor_property('NodePosX', x) — crashes UE
-- ❌ Do NOT try to add K2Node_Comment via Python — use add_blueprint_comment_node
+- ❌ Do NOT add K2Node_Comment via Python — use add_blueprint_comment_node
 - ❌ Do NOT change .uproject EngineAssociation — intentionally on UE 5.7
 - ❌ Do NOT open .uproject via Finder — LaunchServices may route to UE 5.8
-- ❌ Do NOT use `add_blueprint_input_action_node` expecting Enhanced Input nodes —
-  ECA tool always creates legacy `K2Node_InputAction`. Manual editor addition required
-  for `K2Node_EnhancedInputAction` (Enhanced Input Actions > IA_Fire).
+- ❌ Do NOT use add_blueprint_function_node for KismetMath promoted operators
+  (float+float, float>=float) — use lisp_to_blueprint instead
+- ❌ Do NOT rely on lisp_to_blueprint for events that already exist
+  in the BP — it creates duplicates (use delete first, then lisp)
 
-## ECA parameter names (hard-learned)
+## ECA param names
+- add_input_mapping: `context_path` (not imc_path)
+- dump_input_mapping_context: `context_path` (not imc_path)
+- lisp_to_blueprint: `code` (not lisp_code)
 
-- `add_input_mapping`: uses `context_path` (NOT `imc_path`), `action_path`, `key`
-- `dump_input_mapping_context`: uses `context_path` (NOT `imc_path`)
-
-## Repo references
-
+## Repos
 - Studio: https://github.com/ibrews/spellrot
 - UE project: https://github.com/ibrews/spellrot-ue
 - ECABridge: https://github.com/ibrews/ECABridge
-- ECABridge PR #7: https://github.com/ibrews/ECABridge/pull/7 (MERGED)
