@@ -15,13 +15,14 @@ Each Blueprint has a paired `.md` + `.png`:
 |---|---|---|---|
 | 01 | [BP_KillZone](01-bp-killzone-cleanse.md) | ✅ Authored, screenshotted | Cleanse zone — overlap → cast → SetCorruptionLevel(0) |
 | 02 | [BP_WaveSpawner](02-bp-wavespawner.md) | ✅ Authored, screenshotted | Timer-driven BP_Enemy spawner (3 instances placed in level) |
+| 03 | [BP_Enemy cast fix](03-bp-enemy-cast-fix.md) | ✅ Authored, screenshotted | DamageSphere overlap cast fixed: BP_ThirdPersonCharacter → BP_PlatformingCharacter |
+| 04 | [BP_PlatformingCharacter — Corruption Trail](04-bp-platforming-character-corruption-trail.md) | ✅ Authored, screenshotted | Event Tick → Lerp(cyan,green,CorruptionLevel) → SetColorParameter on Trail_L/R |
+| 05 | [BP_PlatformingCharacter — Fireball](05-bp-platforming-character-fireball.md) | ✅ Authored, screenshotted | IA_Fire → LineTrace 2000u → Cast BP_Enemy → ApplyDamage(25) |
 
-## Planned (not yet done)
+## Still to do
 
-- **03 — BP_Fireball** (duplicate of XRFramework `BP_Projectile` with `ApplyDamage` overlap)
-- **04 — BP_PlatformingCharacter (CorruptionLevel chain)** — corruption variable + AnyDamage handler + death
-- **05 — BP_Enemy (kill-purge + chase)** — enemy AnyDamage drops player corruption, Tick chase + touch damage
-- **06 — Niagara trail color drive** (corruption visualization on Trail_L / Trail_R)
+- **PIE full-loop test** — corruption +0.25 per touch, -purge per kill, death+restart at 1.0, cleanse zone resets
+- **IA_Fire IMC binding** — add Left Mouse Button → IA_Fire in IMC_Default or IMC_Platforming (one-click in editor)
 
 ## ECABridge MCP — what worked + what to avoid
 
