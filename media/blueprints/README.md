@@ -50,18 +50,77 @@ Each Blueprint has a paired `.md` + `.png`:
 
 ## Screenshot workflow
 
-The Unreal Editor doesn't expose a BP-editor-screenshot tool. To capture each
-EventGraph cleanly:
+The Unreal Editor doesn't expose a BP-editor-screenshot tool. The reliable
+slide-ready capture flow:
 
-1. `open_blueprint_editor(path)` — opens the BP in editor
-2. `auto_layout_blueprint_graph(path, strategy="horizontal", spacing_x=500, spacing_y=400)`
-3. macOS: `osascript -e 'tell application "System Events" to set frontmost of process "UnrealEditor" to true'`
-4. computer-use: click the **EventGraph** tab
-5. computer-use: click into graph area, then `cmd+a` (select all), `f` (focus selected)
-6. `screencapture -x media/blueprints/NN-bp-name.png`
+### 1. Author the layout first
 
-Step 5 is the trick — without it the camera lands wherever the editor last left
-off, often clipping the BeginPlay header.
+```jsonc
+// (a) clean up node positions — auto OR manual
+auto_layout_blueprint_graph({blueprint_path, strategy: "horizontal", spacing_x: 500, spacing_y: 400})
+// OR for hand-controlled layout (since 2026-05-20, ECABridge PR #7):
+set_blueprint_node_position({blueprint_path, positions: [{node_id, x, y}, ...]})
+
+// (b) optionally add labelled comment regions (since 2026-05-20, ECABridge PR #7)
+add_blueprint_comment_node({
+  blueprint_path,
+  comment: "Setup — Register timer on BeginPlay",
+  wrap_node_ids: ["<guid1>", "<guid2>", ...],
+  color: "#3B82F6",
+  margin: 60
+})
+```
+
+### 2. Compile + save
+
+```jsonc
+compile_blueprint({blueprint_path})  // logs "Compile successful! [in NN ms]" — nice slide indicator
+save_asset({asset_path: blueprint_path})
+```
+
+### 3. Open the editor and select EventGraph
+
+```jsonc
+open_blueprint_editor({blueprint_path})  // may land on Viewport tab for fresh BPs
+```
+
+Then use **computer-use** to click the EventGraph tab (read the screenshot to find its coords).
+
+### 4. Frame all nodes
+
+Computer-use: click into the graph canvas to give it focus, then `cmd+a` (select all) followed by `f` (frame selected).
+
+Without step 4 the camera lands wherever the editor last left off — often clipping the BeginPlay header.
+
+### 5. Capture only the UE window region
+
+```bash
+# Get UE window bounds (avoids capturing Claude's TUI overlay, Finder, etc.)
+BOUNDS=$(osascript -e 'tell application "System Events" to tell process "UnrealEditor" \
+  to get {position, size} of front window' | tr -d ',' | awk '{print $1","$2","$3","$4}')
+
+# Region-capture
+/usr/sbin/screencapture -x -R "$BOUNDS" media/blueprints/NN-bp-name.png
+```
+
+### Gotchas that ate ~30 min the first time
+
+- **`screencapture` is unfiltered** — captures every window on screen, including
+  Claude Code's TUI sitting on top of UE. Two reliable workarounds:
+  1. Hide Claude before capturing: `osascript -e 'tell application "System Events" \
+     to set visible of process "Claude" to false'` → screencapture → restore visibility
+  2. Use `screencapture -R "x,y,w,h"` with bounds from osascript (above). Works
+     unless Claude/Finder is actively overlapping the UE region.
+- **computer-use's `screenshot` tool DOES filter by allowlist** (only granted apps
+  visible) but its output isn't written to your media folder — handy for verification
+  inside the agent loop, not for the canonical slide screenshot.
+- **`take_camera_screenshot` / `take_gameplay_screenshot` MCP tools** target the
+  world viewport, NOT the Slate windows of asset editors. There's no generic
+  "screenshot the BP editor" MCP tool yet (see
+  `Plugins/ECABridge/docs/ecabridge-improvement-roadmap-2026-05-20.md` § 8 for
+  the cross-pollination idea from AIK).
+- **Don't reposition nodes via `unreal.set_editor_property('NodePosX', x)`** —
+  crashes UE 5.7/5.8 hard. Use `set_blueprint_node_position` instead.
 
 ## Why this matters for Unreal Fest
 
