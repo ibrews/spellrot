@@ -7,6 +7,8 @@
   </p>
 </p>
 
+Spellrot is the public development hub for a UE5.7 wizard-versus-zombie arena brawler. It pairs the game's design records and review evidence with a complete Claude Code Game Studios workspace for structured, user-directed game development. [Alex Coulombe Presents](https://github.com/ibrews) maintains this repository.
+
 > **Unreal Engine project:** [`ibrews/spellrot-ue`](https://github.com/ibrews/spellrot-ue) — the actual UE5.7 prototype (`/Users/alex/ue/ThirdPersonClass/`)
 >
 > **Game concept:** [`design/gdd/game-concept.md`](design/gdd/game-concept.md) — full design doc including pillars, core loop, and scope tiers
@@ -50,7 +52,8 @@ The result: you still make every decision, but now you have a team that asks the
 - [What's Included](#whats-included)
 - [Studio Hierarchy](#studio-hierarchy)
 - [Slash Commands](#slash-commands)
-- [Getting Started](#getting-started)
+- [Quickstart](#quickstart)
+- [Things to Try](#things-to-try)
 - [Upgrading](#upgrading)
 - [Project Structure](#project-structure)
 - [How It Works](#how-it-works)
@@ -147,7 +150,7 @@ Type `/` in Claude Code to access all 73 skills:
 **Team Orchestration** (coordinate multiple agents on a single feature)
 `/team-combat` `/team-narrative` `/team-ui` `/team-release` `/team-polish` `/team-audio` `/team-level` `/team-live-ops` `/team-qa`
 
-## Getting Started
+## Quickstart
 
 ### Prerequisites
 
@@ -177,6 +180,13 @@ All hooks fail gracefully if optional tools are missing — nothing breaks, you 
    - `/brainstorm` — explore game ideas from scratch
    - `/setup-engine godot 4.6` — configure your engine if you already know
    - `/project-stage-detect` — analyze an existing project
+
+## Things to Try
+
+1. **Run `/start` in Claude Code** — the onboarding skill should inspect the existing project, ask where you are starting, and route you to an appropriate workflow.
+2. **Run `/help`** — the read-only helper should compare the workflow catalog with the current project artifacts and recommend the next step.
+3. **Run `/project-stage-detect`** — the skill should identify the project's phase and gaps, then ask before writing `production/project-stage-report.md`.
+4. **Run `bash .claude/hooks/detect-gaps.sh`** — the hook should inspect the configured engine, game concept, source, prototypes, and design documents, then print any documentation gaps it finds.
 
 ## Upgrading
 
